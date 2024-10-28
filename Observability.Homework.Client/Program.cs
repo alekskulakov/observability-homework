@@ -1,4 +1,5 @@
-﻿using System.Net.Http.Json;
+﻿using System.Globalization;
+using System.Net.Http.Json;
 using OpenTelemetry;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
@@ -9,7 +10,8 @@ using var tracerProvider = Sdk.CreateTracerProviderBuilder()
     .AddSource(serviceName)
     .SetResourceBuilder(
         ResourceBuilder.CreateDefault()
-            .AddService(serviceName: serviceName))
+            .AddService(serviceName: serviceName)
+            .AddAttributes(new []{ new KeyValuePair<string, object>("LocalDatetime", DateTime.Now.ToString(CultureInfo.InvariantCulture)) }))
     .AddJaegerExporter()
     .AddHttpClientInstrumentation()
     .Build();

@@ -44,13 +44,12 @@ builder.Services
         tcb
             .AddSource(serviceName)
             .SetResourceBuilder(
-                ResourceBuilder.CreateDefault()
-                    .AddService(serviceName: serviceName)
-                    .AddAttributes(new []{ new KeyValuePair<string, object>("LocalDatetime", DateTime.Now.ToString()) }))
+                ResourceBuilder.CreateDefault().AddService(serviceName: serviceName))
             .AddAspNetCoreInstrumentation()
             .AddJaegerExporter();
     });
 
+builder.Services.AddSingleton(TracerProvider.Default.GetTracer(serviceName));
 builder.Services.AddSingleton<IPizzaBakeryService, PizzaBakeryService>();
 
 var app = builder.Build();
