@@ -45,7 +45,8 @@ builder.Services
             .AddSource(serviceName)
             .SetResourceBuilder(
                 ResourceBuilder.CreateDefault()
-                    .AddService(serviceName: serviceName))
+                    .AddService(serviceName: serviceName)
+                    .AddAttributes(new []{ new KeyValuePair<string, object>("LocalDatetime", DateTime.Now.ToString()) }))
             .AddAspNetCoreInstrumentation()
             .AddJaegerExporter();
     });
