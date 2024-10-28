@@ -30,6 +30,7 @@ using Microsoft.AspNetCore.Mvc;
 using Observability.Homework.Extensions;
 using Observability.Homework.Models;
 using Observability.Homework.Services;
+using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 
@@ -47,9 +48,16 @@ builder.Services
                 ResourceBuilder.CreateDefault().AddService(serviceName: serviceName))
             .AddAspNetCoreInstrumentation()
             .AddJaegerExporter();
+    })
+    .WithMetrics(mpb =>
+    {
+        mpb
+            .AddMeter(MetricsService.MetricsServiceName)
+            .AddPrometheusExporter();
     });
 
 builder.Services.AddSingleton(TracerProvider.Default.GetTracer(serviceName));
+builder.Services.AddSingleton<MetricsService>();
 builder.Services.AddSingleton<IPizzaBakeryService, PizzaBakeryService>();
 
 var app = builder.Build();
@@ -58,14 +66,16 @@ app.MapPost("/order", async (
     [FromBody] Order order,
     ILogger<Program> logger,
     IPizzaBakeryService pizzaBakeryService,
+    MetricsService metricsService,
     CancellationToken cancellationToken) =>
 {
     using var _ = logger.BeginScope(new Dictionary<string, object> { { "ClientId", order.Client.Id } });
     
+    metricsService.ProductType(order);
     if (order.Product.Type is ProductType.Pizza)
         await pizzaBakeryService.DoPizza(order.Product, cancellationToken);
     
     return Results.Ok(order.Product);
 });
-
+app.MapPrometheusScrapingEndpoint();
 app.Run();

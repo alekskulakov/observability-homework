@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using Observability.Homework.Exceptions;
 using Observability.Homework.Models;
 using OpenTelemetry.Trace;
@@ -12,6 +13,7 @@ public interface IPizzaBakeryService
 
 public class PizzaBakeryService(
     ILogger<PizzaBakeryService> logger,
+    MetricsService metricsService,
     Tracer tracer) : IPizzaBakeryService
 {
     private readonly ConcurrentDictionary<Guid, Product> _bake = new();
@@ -22,11 +24,16 @@ public class PizzaBakeryService(
         using var span = tracer.StartActiveSpan(nameof(DoPizza));
         try
         {
+            var stopwatch = Stopwatch.StartNew();
+            metricsService.IncreaseCookingProductsCount();
+
             await MakePizza(product, cancellationToken);
             await BakePizza(product, cancellationToken);
             await PackPizza(product, cancellationToken);
-            
 
+            stopwatch.Stop();
+            metricsService.CookingTime(product, stopwatch.Elapsed.TotalSeconds);
+            metricsService.DecreaseCookingProductsCount();
             logger.LogInformation("Finish cooking: {productId}", product.Id);
 
             return product;
@@ -34,6 +41,7 @@ public class PizzaBakeryService(
         catch (OperationCanceledException)
         {
             logger.LogError("Cancel cooking: {productId}", product.Id);
+            metricsService.OrderCanceled();
 
             DropPizza(product);
             throw;
@@ -41,7 +49,7 @@ public class PizzaBakeryService(
         catch (BurntPizzaException)
         {
             logger.LogError("Burnt product: {productId}", product.Id);
-
+            metricsService.PizzaBurnt();
             return await DoPizza(product, cancellationToken);
         }
     }
@@ -93,8 +101,8 @@ public class PizzaBakeryService(
     
     private void DropPizza(Product product)
     {
-        logger.LogInformation("Drop pizza: {productId}", product.Id);
         using var span = tracer.StartActiveSpan(nameof(DropPizza));
+        metricsService.DecreaseCookingProductsCount();
 
         _bake.Remove(product.Id, out _);
     }
