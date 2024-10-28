@@ -26,6 +26,7 @@
  *  4.6** Построить графики по этим метрикам в графане. Для этого вам нужен язык запросов PromQl. Советую использовать chatGPT, он очень хорошо генерирует запросы PromQL
  */
 
+using System.Globalization;
 using Microsoft.AspNetCore.Mvc;
 using Observability.Homework.Extensions;
 using Observability.Homework.Models;
@@ -46,7 +47,13 @@ builder.Services
             .AddSource(serviceName)
             .SetResourceBuilder(
                 ResourceBuilder.CreateDefault().AddService(serviceName: serviceName))
-            .AddAspNetCoreInstrumentation()
+            .AddAspNetCoreInstrumentation(options =>
+            {
+                options.EnrichWithHttpRequest = (activity, _) =>
+                {
+                    activity.SetTag("LocalDatetime", DateTime.Now.ToString(CultureInfo.InvariantCulture));
+                };
+            })
             .AddJaegerExporter();
     })
     .WithMetrics(mpb =>

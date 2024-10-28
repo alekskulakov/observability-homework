@@ -11,9 +11,13 @@ using var tracerProvider = Sdk.CreateTracerProviderBuilder()
     .SetResourceBuilder(
         ResourceBuilder.CreateDefault()
             .AddService(serviceName: serviceName)
-            .AddAttributes(new []{ new KeyValuePair<string, object>("LocalDatetime", DateTime.Now.ToString(CultureInfo.InvariantCulture)) }))
+            .AddAttributes(new []{ new KeyValuePair<string, object>("LocalDatetime3", DateTime.Now.ToString(CultureInfo.InvariantCulture)) }))
     .AddJaegerExporter()
-    .AddHttpClientInstrumentation()
+    .AddHttpClientInstrumentation(builder => 
+        builder.EnrichWithHttpRequestMessage = (activity, _) =>
+        {
+            activity.SetTag("LocalDatetime2", DateTime.Now.ToString(CultureInfo.InvariantCulture));
+        })
     .Build();
 
 using var httpClient = new HttpClient();
