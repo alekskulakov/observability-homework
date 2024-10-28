@@ -30,10 +30,26 @@ using Microsoft.AspNetCore.Mvc;
 using Observability.Homework.Extensions;
 using Observability.Homework.Models;
 using Observability.Homework.Services;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 
+var serviceName = "Observability.Homework";
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddLogging();
+builder.Services
+    .AddOpenTelemetry()
+    .WithTracing(tcb =>
+    {
+        tcb
+            .AddSource(serviceName)
+            .SetResourceBuilder(
+                ResourceBuilder.CreateDefault()
+                    .AddService(serviceName: serviceName))
+            .AddAspNetCoreInstrumentation()
+            .AddJaegerExporter();
+    });
+
 builder.Services.AddSingleton<IPizzaBakeryService, PizzaBakeryService>();
 
 var app = builder.Build();
