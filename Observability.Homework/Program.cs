@@ -27,17 +27,25 @@
  */
 
 using Microsoft.AspNetCore.Mvc;
+using Observability.Homework.Extensions;
 using Observability.Homework.Models;
 using Observability.Homework.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.AddLogging();
 builder.Services.AddSingleton<IPizzaBakeryService, PizzaBakeryService>();
 
 var app = builder.Build();
 
-app.MapPost("/order", async ([FromBody] Order order, IPizzaBakeryService pizzaBakeryService, CancellationToken cancellationToken) =>
+app.MapPost("/order", async (
+    [FromBody] Order order,
+    ILogger<Program> logger,
+    IPizzaBakeryService pizzaBakeryService,
+    CancellationToken cancellationToken) =>
 {
+    using var _ = logger.BeginScope(new Dictionary<string, object> { { "ClientId", order.Client.Id } });
+    
     if (order.Product.Type is ProductType.Pizza)
         await pizzaBakeryService.DoPizza(order.Product, cancellationToken);
     

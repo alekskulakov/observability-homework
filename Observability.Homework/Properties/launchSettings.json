@@ -9,13 +9,22 @@
     }
   },
   "profiles": {
-    "http": {
+    "http dev": {
       "commandName": "Project",
-      "dotnetRunMessages": true,
-      "launchBrowser": true,
-      "applicationUrl": "http://localhost:5216",
+      "dotnetRunMessages": false,
+      "launchBrowser": false,
+      "applicationUrl": "http://localhost:52216",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    },
+    "http release": {
+      "commandName": "Project",
+      "dotnetRunMessages": false,
+      "launchBrowser": false,
+      "applicationUrl": "http://localhost:52216",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Release"
       }
     },
     "https": {
